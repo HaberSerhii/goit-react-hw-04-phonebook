@@ -1,5 +1,4 @@
-/* eslint-disable */
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { nanoid } from 'nanoid';
 import { Report } from 'notiflix';
 import { Section } from './Section/Section.styled';
@@ -7,6 +6,9 @@ import MyForm from './Form/Form';
 import { ContactList } from './ContactList/ContactList';
 import { EmptyEl } from './ContactList/ContactList.styled';
 import Filter from './Filter/Filter';
+
+const STORAGE_FILTER = 'phonebook-filter';
+const STORAGE_CONTACTS = 'phonebook-contact';
 
 const DEFAULT_CONTACTS = [
   { id: 'id-1', name: 'Rosie Simpson', number: '459-12-56' },
@@ -20,46 +22,47 @@ export const App = () => {
   const [contacts, setContacts] = useState([]);
   const [visibleContacts, setVisibleContacts] = useState([]);
 
+  const getFilteredContacts = useCallback(
+    searchValue => {
+      if (!searchValue) {
+        setVisibleContacts(contacts);
+
+        return;
+      }
+
+      const parsedValue = searchValue.toLowerCase();
+
+      const result = contacts.filter(contact =>
+        contact.name.toLowerCase().includes(parsedValue)
+      );
+
+      setVisibleContacts(result);
+    },
+    [setVisibleContacts, contacts]
+  );
+
   useEffect(() => {
-    const savedFilter = localStorage.getItem('phonebook-filter') || '';
-    const savedContact = localStorage.getItem('phonebook-contact');
+    const savedFilter = localStorage.getItem(STORAGE_FILTER) || '';
+    const savedContact = localStorage.getItem(STORAGE_CONTACTS);
     let parsedData = savedContact ? JSON.parse(savedContact) : DEFAULT_CONTACTS;
 
     if (!parsedData.length) {
       parsedData = DEFAULT_CONTACTS;
     }
 
-    setFilter(savedFilter);
+    if (savedFilter) {
+      setFilter(savedFilter);
+    }
+
     setContacts(parsedData);
     setVisibleContacts(parsedData);
-
-    if (savedFilter) {
-      setVisibleContacts(getFilteredContacts());
-    }
   }, []);
 
   useEffect(() => {
-    if (!filter) {
-      setVisibleContacts(contacts);
+    getFilteredContacts(filter);
 
-      return;
-    }
-
-    setVisibleContacts(getFilteredContacts());
-    localStorage.setItem('phonebook-filter', filter);
-  }, [filter]);
-
-  useEffect(() => {
-    if (filter) {
-      setVisibleContacts(getFilteredContacts());
-    } else {
-      setVisibleContacts(contacts);
-    }
-
-    if (contacts.length) {
-      localStorage.setItem('phonebook-contact', JSON.stringify(contacts));
-    }
-  }, [contacts]);
+    localStorage.setItem(STORAGE_FILTER, filter);
+  }, [filter, contacts, getFilteredContacts]);
 
   const addContact = data => {
     const identicalContactName = contacts.some(
@@ -77,7 +80,11 @@ export const App = () => {
       ...data,
       id: nanoid(),
     };
-    setContacts([...contacts, newContact]);
+
+    const newData = [...contacts, newContact];
+    setContacts(newData);
+    setVisibleContacts(newData);
+    localStorage.setItem(STORAGE_CONTACTS, JSON.stringify(newData));
   };
 
   const deleteContact = contactId => {
@@ -85,7 +92,7 @@ export const App = () => {
       contact => contact.id !== contactId
     );
 
-    localStorage.setItem('phonebook-contact', JSON.stringify(filteredContacts));
+    localStorage.setItem(STORAGE_CONTACTS, JSON.stringify(filteredContacts));
     setContacts(filteredContacts);
   };
 
@@ -97,20 +104,7 @@ export const App = () => {
 
   const clearFilter = () => {
     setFilter('');
-    localStorage.removeItem('phonebook-filter');
-  };
-
-  const getFilteredContacts = () => {
-    if (!filter) {
-      return contacts;
-    }
-
-    const parsedValue = filter.toLowerCase();
-    const filteredContacts = contacts.filter(contact =>
-      contact.name.toLowerCase().includes(parsedValue)
-    );
-
-    return filteredContacts;
+    setVisibleContacts(contacts);
   };
 
   return (
