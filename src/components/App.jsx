@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { nanoid } from 'nanoid';
 import { Report } from 'notiflix';
 import { Section } from './Section/Section.styled';
@@ -19,6 +19,19 @@ export const App = () => {
   const [contacts, setContacts] = useState([]);
   const [visibleContacts, setVisibleContacts] = useState([]);
 
+  const getFilteredContacts = useCallback(() => {
+    if (!filter) {
+      return contacts;
+    }
+
+    const parsedValue = filter.toLowerCase();
+    const filteredContracts = contacts.filter(contact =>
+      contact.name.toLowerCase().includes(parsedValue)
+    );
+
+    return filteredContracts;
+  },[]);
+
   useEffect(() => {
     const savedFilter = localStorage.getItem('phonebook-filter') || '';
     const savedContact = localStorage.getItem('phonebook-contact');
@@ -35,7 +48,7 @@ export const App = () => {
     if (savedFilter) {
       setVisibleContacts(getFilteredContacts());
     }
-  }, []);
+  }, [getFilteredContacts]);
 
   useEffect(() => {
     if (!filter) {
@@ -46,7 +59,7 @@ export const App = () => {
 
     setVisibleContacts(getFilteredContacts());
     localStorage.setItem('phonebook-filter', filter);
-  }, [filter]);
+  }, [filter, getFilteredContacts]);
 
   useEffect(() => {
     if (filter) {
@@ -58,7 +71,7 @@ export const App = () => {
     if (contacts.length) {
       localStorage.setItem('phonebook-contact', JSON.stringify(contacts));
     }
-  }, [contacts]);
+  }, [contacts, getFilteredContacts]);
 
   const addContact = data => {
     const identicalContactName = contacts.some(
@@ -92,19 +105,6 @@ export const App = () => {
     const value = e.currentTarget.value.trim();
 
     setFilter(value);
-  };
-
-  const getFilteredContacts = () => {
-    if (!filter) {
-      return contacts;
-    }
-
-    const parsedValue = filter.toLowerCase();
-    const filteredContracts = contacts.filter(contact =>
-      contact.name.toLowerCase().includes(parsedValue)
-    );
-
-    return filteredContracts;
   };
 
   const clearFilter = () => {
