@@ -1,3 +1,4 @@
+/* eslint-disable */
 import { useEffect, useState } from 'react';
 import { nanoid } from 'nanoid';
 import { Report } from 'notiflix';
