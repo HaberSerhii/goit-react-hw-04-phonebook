@@ -1,10 +1,7 @@
-import { Component } from 'react';
 import { ContactItem } from '../ContactItem/ContactItem';
 import { ContactListStyled } from './ContactList.styled';
 
-export class ContactList extends Component {
-  render() {
-    const { contacts, onDeleteContact } = this.props;
+export const ContactList = ({ contacts, onDeleteContact }) => {
     return (
       <ContactListStyled>
         {contacts.map(contact => {
@@ -18,5 +15,4 @@ export class ContactList extends Component {
         })}
       </ContactListStyled>
     );
-  }
-};
+  };
